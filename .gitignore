@@ -28,3 +28,4 @@ forge*changelog.txt
 .idea/
 build/
 run/
+.DS_Store
