@@ -1,0 +1,9 @@
+{
+  "updater.updater": "Update",
+  "updater.download": "Download",
+  "updater.download.screen": "Downloader",
+  "updater.download.url": "Download File URL",
+  "updater.download.error": "Could not download :(",
+  "updater.download.loading": "Downloading",
+  "updater.download.success": "Downloaded Mods!"
+}
