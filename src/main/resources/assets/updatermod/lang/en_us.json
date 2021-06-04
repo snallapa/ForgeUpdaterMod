@@ -5,5 +5,5 @@
   "updater.download.url": "Download File URL",
   "updater.download.error": "Could not download :(",
   "updater.download.loading": "Downloading",
-  "updater.download.success": "Downloaded Mods!"
+  "updater.download.success": "Downloaded Mods! Restart Forge :)"
 }
