@@ -19,67 +19,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.nallapareddy.updatermod.client.sources.util.URLUtil.connect;
+
 public class GithubSource extends BaseSource {
 
 
-    private final URL releaseUrl;
+    private final String releaseUrl;
     public GithubSource(String latestVersion, String repo, String owner) throws IllegalArgumentException {
         super(latestVersion);
-        try {
-            releaseUrl = new URL(String.format("https://api.github.com/repos/%s/%s/releases/tags/v%s", owner, repo, latestVersion));
-            LOGGER.info("Github Source URL {}", releaseUrl);
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Github Source could not be created! Invalid repo owner version provided");
-        }
+        releaseUrl = String.format("https://api.github.com/repos/%s/%s/releases/tags/v%s", owner, repo, latestVersion);
+        LOGGER.info("Github Source URL {}", releaseUrl);
     }
 
     @Override
     public void download(Path filePath) throws IOException {
-        URL currentUrl = releaseUrl;
-        for (int redirects = 0; redirects < MAX_HTTP_REDIRECTS; redirects++)
-        {
-            URLConnection c = currentUrl.openConnection();
-            if (c instanceof HttpURLConnection)
-            {
-                HttpURLConnection huc = (HttpURLConnection) c;
-                huc.setRequestProperty("accept", "application/vnd.github.v3+json");
-                huc.setInstanceFollowRedirects(false);
-                int responseCode = huc.getResponseCode();
-                if (responseCode >= 300 && responseCode <= 399)
-                {
-                    try
-                    {
-                        String loc = huc.getHeaderField("Location");
-                        currentUrl = new URL(currentUrl, loc);
-                        continue;
-                    }
-                    finally
-                    {
-                        huc.disconnect();
-                    }
-                }
+        InputStream con = connect(releaseUrl);
+        String data = new String(ByteStreams.toByteArray(con), StandardCharsets.UTF_8);
+        con.close();
 
-                if (responseCode != 200) {
-                    LOGGER.error("Error fetching github!!! {}",
-                            new String(ByteStreams.toByteArray(huc.getErrorStream()), StandardCharsets.UTF_8));
-                }
-            }
-
-            InputStream con = c.getInputStream();
-            String data = new String(ByteStreams.toByteArray(con), StandardCharsets.UTF_8);
-            con.close();
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> json = new Gson().fromJson(data, Map.class);
-            @SuppressWarnings("unchecked")
-            List<Map<String, String>> assets = (List<Map<String, String>>)json.get("assets");
-            Map<String, String> latest = assets.get(0);
-            String browserDownloadURL = latest.get("browser_download_url");
-            String assetName = latest.get("name");
-            LOGGER.info("Downloading release {} to {}", browserDownloadURL, Paths.get(filePath.toAbsolutePath().toString(), assetName));
-            downloadFile(new URL(browserDownloadURL), Paths.get(filePath.toAbsolutePath().toString(), assetName));
-            return;
-        }
-        throw new IOException("Too many redirects while trying to fetch " + releaseUrl);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> json = new Gson().fromJson(data, Map.class);
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> assets = (List<Map<String, String>>)json.get("assets");
+        Map<String, String> latest = assets.get(0);
+        String browserDownloadURL = latest.get("browser_download_url");
+        String assetName = latest.get("name");
+        LOGGER.info("Downloading release {} to {}", browserDownloadURL, Paths.get(filePath.toAbsolutePath().toString(), assetName));
+        downloadFile(new URL(browserDownloadURL), Paths.get(filePath.toAbsolutePath().toString(), assetName));
     }
 }

@@ -17,18 +17,17 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 
+import static com.nallapareddy.updatermod.client.sources.util.URLUtil.connect;
+
 public class ModDownloaderScreen extends Screen {
     private static final Logger LOGGER = LogManager.getLogger();
-    private static final int MAX_HTTP_REDIRECTS = Integer.getInteger("http.maxRedirects", 20);
     private TextFieldWidget downloadUrl;
     private final Screen parentScreen;
     private static final int PADDING = 6;
@@ -97,37 +96,6 @@ public class ModDownloaderScreen extends Screen {
         this.minecraft.setScreen(this.parentScreen);
     }
 
-    private InputStream openUrlStream(URL url) throws IOException
-    {
-        URL currentUrl = url;
-        for (int redirects = 0; redirects < MAX_HTTP_REDIRECTS; redirects++)
-        {
-            URLConnection c = currentUrl.openConnection();
-            if (c instanceof HttpURLConnection)
-            {
-                HttpURLConnection huc = (HttpURLConnection) c;
-                huc.setInstanceFollowRedirects(false);
-                int responseCode = huc.getResponseCode();
-                if (responseCode >= 300 && responseCode <= 399)
-                {
-                    try
-                    {
-                        String loc = huc.getHeaderField("Location");
-                        currentUrl = new URL(currentUrl, loc);
-                        continue;
-                    }
-                    finally
-                    {
-                        huc.disconnect();
-                    }
-                }
-            }
-
-            return c.getInputStream();
-        }
-        throw new IOException("Too many redirects while trying to fetch " + url);
-    }
-
     public void onDownload() {
         Path modDirectory = FMLPaths.MODSDIR.get();
         LOGGER.info("Mods Directory {}" , modDirectory);
@@ -136,9 +104,8 @@ public class ModDownloaderScreen extends Screen {
             URL url = new URL(urlString);
             downloadStatus = DownloadStatus.LOADING;
             new Thread(() -> {
-                InputStream con = null;
                 try {
-                    con = openUrlStream(url);
+                    InputStream con = connect(url);
                     String data = new String(ByteStreams.toByteArray(con), StandardCharsets.UTF_8);
                     con.close();
                     @SuppressWarnings("unchecked")
