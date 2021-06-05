@@ -23,8 +23,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 public class ModDownloaderScreen extends Screen {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -68,6 +68,7 @@ public class ModDownloaderScreen extends Screen {
         int x = downloadUrl.x + PADDING/2;
         font.draw(mStack, text.getVisualOrderText(), x, downloadUrl.y - font.lineHeight - 3, 0xFFFFFF);
         if (downloadStatus != DownloadStatus.NONE) {
+
             ITextComponent messageText = new TranslationTextComponent(downloadStatus.text);
             int messageWidth = font.width(messageText);
             x = (downloadUrl.getWidth() - messageWidth) / 2 + downloadUrl.x;
@@ -143,19 +144,24 @@ public class ModDownloaderScreen extends Screen {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> values = new Gson().fromJson(data, Map.class);
                     LOGGER.info("received JSON {}", data);
-                    Collection<Object> mods = values.values();
-                    for (Object mod : mods) {
-                        Map<String, String> jsonMod = (Map<String, String>) mod;
+                    Set<Map.Entry<String, Object>> mods = values.entrySet();
+                    for (Map.Entry<String, Object> mod : mods) {
+                        String modName = mod.getKey();
+                        Map<String, String> jsonMod = (Map<String, String>) mod.getValue();
                         String source = jsonMod.get("source");
                         SupportedSources supportedSources = SupportedSources.parseSource(source);
                         if (supportedSources == null) {
-                            // ERROR
+                            LOGGER.error("not a supported source! {} for {}", source, modName);
                         }
                         Source updateSource = supportedSources.getParser().parse(jsonMod);
-                        updateSource.download(modDirectory);
-                        downloadStatus = DownloadStatus.SUCCESS;
-                        return;
+                        try {
+                            updateSource.download(modDirectory);
+                        } catch (IOException e) {
+                            LOGGER.error("error downloading! {} for {}", source, modName);
+                            throw e;
+                        }
                     }
+                    downloadStatus = DownloadStatus.SUCCESS;
                 } catch (IOException e) {
                     LOGGER.error("Could not download mod {}", urlString, e);
                     downloadStatus = DownloadStatus.ERROR;

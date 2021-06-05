@@ -1,10 +1,12 @@
 package com.nallapareddy.updatermod.client.sources;
 
 import com.nallapareddy.updatermod.client.sources.parsers.BaseParser;
+import com.nallapareddy.updatermod.client.sources.parsers.CurseForgeParser;
 import com.nallapareddy.updatermod.client.sources.parsers.GithubParser;
 
 public enum SupportedSources {
-    GITHUB("GITHUB", new GithubParser());
+    GITHUB("GITHUB", new GithubParser()),
+    CURSE("CURSEFORGE", new CurseForgeParser());
 
     private String name;
     private BaseParser<?> parser;

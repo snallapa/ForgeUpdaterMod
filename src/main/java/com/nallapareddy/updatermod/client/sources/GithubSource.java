@@ -21,11 +21,8 @@ import java.util.UUID;
 
 public class GithubSource extends BaseSource {
 
-    private static final Logger LOGGER = LogManager.getLogger();
 
     private final URL releaseUrl;
-    private static final int MAX_HTTP_REDIRECTS = Integer.getInteger("http.maxRedirects", 30);
-
     public GithubSource(String latestVersion, String repo, String owner) throws IllegalArgumentException {
         super(latestVersion);
         try {
