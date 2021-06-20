@@ -1,5 +1,8 @@
 {
   "updater.updater": "Update",
+  "updater.updater.file_error": "Downloaded :) Resolve Mods folder",
+  "updater.updater.download_error": "Failed to download mod :(",
+  "updater.updater.success": "Mod updated :) Restart Forge",
   "updater.download": "Download",
   "updater.download.screen": "Downloader",
   "updater.download.url": "Download File URL",
